@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import func from 'vue-temp/vue-editor-bridge'
 
 interface BlockState{
   x: number
   y: number
-  revealed?: boolean
+  revealed: boolean
   mine?: boolean
   flagged?: boolean
-  adjacentMines?: number
+  adjacentMines: number
 }
 
-const WIDTH = 10
-const HEIGHT = 10
+const WIDTH = 5
+const HEIGHT = 5
 
 const state = reactive(
   Array.from({ length: HEIGHT }, (_, y) =>
@@ -26,17 +25,51 @@ const state = reactive(
   ),
 )
 
-function onClick(block: BlockState) {
+let mineGenerated = false
+
+const dev = false
+
+function onClick(e: MouseEvent, block: BlockState) {
+  if (!mineGenerated) {
+    generatorMines(block)
+    updateNumbers()
+
+    mineGenerated = true
+  }
   block.revealed = true
   if (block.mine)
     alert('BOOOM!')
+  expendZero(block)
 }
 
-function generatorMines() {
+function onRightClick(block: BlockState) {
+  if (block.revealed)
+    return
+  block.flagged = !block.flagged
+}
+
+function generatorMines(initial: BlockState) {
   for (const row of state) {
-    for (const block of row)
-      block.mine = Math.random() < 0.3
+    for (const block of row) {
+      if (Math.abs(initial.x - block.x) < 1)
+        continue
+      if (Math.abs(initial.y - block.y) < 1)
+        continue
+      block.mine = Math.random() < 0.2
+    }
   }
+}
+
+function expendZero(block: BlockState) {
+  if (block.adjacentMines)
+    return
+  getSiblings(block)
+    .forEach((s) => {
+      if (!s.revealed) {
+        s.revealed = true
+        expendZero(s)
+      }
+    })
 }
 
 const directions = [
@@ -67,28 +100,46 @@ function updateNumbers() {
     row.forEach((block, x) => {
       if (block.mine)
         return
-      directions.forEach(([dx, dy]) => {
-        const x2 = x + dx
-        const y2 = y + dy
-        if (x2 < 0 || x2 >= WIDTH || y2 < 0 || y2 >= HEIGHT)
-          return
-
-        if (state[y2][x2].mine)
-          block.adjacentMines += 1
-      })
+      getSiblings(block)
+        .forEach((b) => {
+          if (b.mine)
+            block.adjacentMines += 1
+        })
     })
   })
 }
+function getSiblings(block: BlockState) {
+  return directions.map(([dx, dy]) => {
+    const x2 = block.x + dx
+    const y2 = block.y + dy
+    if (x2 < 0 || x2 >= WIDTH || y2 < 0 || y2 >= HEIGHT)
+      return undefined
+
+    return state[y2][x2]
+  }).filter(Boolean) as BlockState[]
+}
 
 function getBlockClass(block: BlockState) {
+  if (block.flagged)
+    return 'bg-gray-500/10'
+
   if (!block.revealed)
-    return 'bg-gray/10'
+    return 'bg-gray-500/10 hover:bg-gray/20'
 
   return block.mine ? 'bg-red-500/50' : numberColors[block.adjacentMines]
 }
 
-generatorMines()
-updateNumbers()
+function checkGameStatus() {
+  const blocks = state.flat()
+  if (blocks.every(block => block.revealed || (block.flagged && block.mine))) {
+    if (blocks.some(block => block.flagged && !block.mine))
+      alert('You Cheat')
+    else
+      alert('You Win!!')
+  }
+}
+
+watchEffect(checkGameStatus)
 
 </script>
 
@@ -111,13 +162,16 @@ updateNumbers()
           justify-center
           w-10
           h-10
-          hover="bg-gray/10"
           m="0.5"
           border="1 gray-400/10"
           :class="getBlockClass(item)"
-          @click="onClick(item)"
+          @click="onClick($event,item)"
+          @contextmenu.prevent="onRightClick(item)"
         >
-          <template v-if="item.revealed">
+          <template v-if="item.flagged">
+            <div i-mdi-flag text-red />
+          </template>
+          <template v-else-if="item.revealed || dev">
             <div v-if="item.mine" i-mdi:mine>
               x
             </div>

@@ -1,3 +1,4 @@
+import type { Ref } from 'vue'
 import type { BlockState } from '~/type'
 
 const directions = [
@@ -11,46 +12,68 @@ const directions = [
   [0, 1],
 ]
 
+interface GameState{
+  board: BlockState[][]
+  mineGenerated: boolean
+  gameState: 'play'|'lost'|'won'
+}
+
 export default class GamePlay {
   WIDTH = 5
   HEIGHT = 5
-  mineGenerated = false
+  // mineGenerated = false
 
-  state = ref<BlockState[][]>([])
+  state = ref() as Ref<GameState>
+  // gameState = ref<'play'|'won'|'lost'> ('play')
 
   constructor(public width: number, public height: number) {
     this.reset()
+    // this.updateNumbers(this.board)
     // watchEffect(this.checkGameStatus)
   }
 
   reset() {
-    this.mineGenerated = false
-    this.state.value = Array.from({ length: this.height }, (_, y) =>
-      Array.from({ length: this.width },
-        (_, x): BlockState => ({
-          x,
-          y,
-          adjacentMines: 0,
-          revealed: false,
-        }),
+    this.state.value = {
+      mineGenerated: false,
+      gameState: 'play',
+      board: Array.from({ length: this.height }, (_, y) =>
+        Array.from({ length: this.width },
+          (_, x): BlockState => ({
+            x,
+            y,
+            adjacentMines: 0,
+            revealed: false,
+          }),
+        ),
       ),
-    )
+    }
+  }
+
+  get board() {
+    return this.state.value?.board
   }
 
   onClick(block: BlockState) {
-    if (!this.mineGenerated) {
-      this.generatorMines(this.state.value, block)
-      this.updateNumbers(this.state.value)
+    if (this.state.value.gameState !== 'play')
+      return
 
-      this.mineGenerated = true
+    if (!this.state.value.mineGenerated) {
+      this.generatorMines(this.board, block)
+      this.updateNumbers(this.board)
+
+      this.state.value.mineGenerated = true
     }
     block.revealed = true
-    if (block.mine)
-      alert('BOOOM!')
+    if (block.mine) {
+      this.state.value.gameState = 'lost'
+      this.showAllMines()
+    }
     this.expendZero(block)
   }
 
   onRightClick(block: BlockState) {
+    if (this.state.value.gameState !== 'play')
+      return
     if (block.revealed)
       return
     block.flagged = !block.flagged
@@ -94,6 +117,12 @@ export default class GamePlay {
     })
   }
 
+  showAllMines() {
+    this.board.flat().forEach((i) => {
+      i.revealed = true
+    })
+  }
+
   getSiblings(block: BlockState) {
     return directions.map(([dx, dy]) => {
       const x2 = block.x + dx
@@ -101,17 +130,18 @@ export default class GamePlay {
       if (x2 < 0 || x2 >= this.width || y2 < 0 || y2 >= this.height)
         return undefined
 
-      return this.state.value[y2][x2]
+      return this.board[y2][x2]
     }).filter(Boolean) as BlockState[]
   }
 
   checkGameStatus() {
-    const blocks = this.state.value.flat()
+    const blocks = this.board.flat()
     if (blocks.every(block => block.revealed || (block.flagged && block.mine))) {
-      if (blocks.some(block => block.flagged && !block.mine))
+      if (blocks.some(block => block.flagged && !block.mine)) {
+        this.showAllMines()
         alert('You Cheat')
-      else
-        alert('You Win!!')
+      }
+      else { alert('You Win!!') }
     }
   }
 }

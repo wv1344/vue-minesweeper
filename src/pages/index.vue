@@ -8,7 +8,10 @@ import GamePlay from '~/composables/logic'
 
 const play = new GamePlay(12, 12)
 
-const state = play.state
+useStorage('vuesweeper-state', play.state)
+
+const state = computed(() => play.board)
+
 // const WIDTH = 5
 // const HEIGHT = 5
 

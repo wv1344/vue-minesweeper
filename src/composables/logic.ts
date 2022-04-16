@@ -138,10 +138,14 @@ export default class GamePlay {
     const blocks = this.board.flat()
     if (blocks.every(block => block.revealed || (block.flagged && block.mine))) {
       if (blocks.some(block => block.flagged && !block.mine)) {
+        this.state.value.gameState = 'lost'
         this.showAllMines()
         alert('You Cheat')
       }
-      else { alert('You Win!!') }
+      else {
+        this.state.value.gameState = 'won'
+        alert('You Win!!')
+      }
     }
   }
 }

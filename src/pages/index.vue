@@ -15,7 +15,7 @@ const state = computed(() => play.board)
 watchEffect(() => {
   play.checkGameStatus()
 })
-
+//
 // const WIDTH = 5
 // const HEIGHT = 5
 

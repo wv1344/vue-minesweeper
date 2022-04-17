@@ -136,13 +136,14 @@ watchEffect(() => {
   <div>
     Minesweeper
 
-    <div p5>
+    <div p5 w-auto scroll-auto overflow-auto>
       <div
         v-for="row,y in state"
         :key="y"
         flex="~"
         items-center
         justify-center
+        w-full
       >
         <MineBlock
           v-for="block,x in row" :key="x"

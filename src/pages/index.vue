@@ -6,11 +6,15 @@ import MineBlock from '~/components/mineBlock.vue'
 
 import GamePlay from '~/composables/logic'
 
-const play = new GamePlay(5, 5)
+const play = new GamePlay(12, 12, 30)
 
 useStorage('vuesweeper-state', play.state)
 
 const state = computed(() => play.board)
+
+const mineCount = computed(() => {
+  return play.boards.reduce((a, b) => a + (b.mine ? 1 : 0), 0)
+})
 
 watchEffect(() => {
   play.checkGameStatus()
@@ -146,6 +150,9 @@ watchEffect(() => {
           @click="play.onClick(block)"
           @contextmenu.prevent="play.onRightClick(block)"
         />
+      </div>
+      <div>
+        {{ mineCount }}
       </div>
       <div flex="~" mt-5 justify-center>
         <button

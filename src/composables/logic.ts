@@ -177,7 +177,6 @@ export default class GamePlay {
       }
       else {
         this.state.value.gameState = 'won'
-        alert('You Win!!')
       }
     }
   }

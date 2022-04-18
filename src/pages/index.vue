@@ -5,8 +5,9 @@ import { toggleDev } from '~/composables'
 import MineBlock from '~/components/mineBlock.vue'
 
 import GamePlay from '~/composables/logic'
+import ConFetti from '~/components/ConFetti.vue'
 
-const play = new GamePlay(12, 12, 30)
+const play = new GamePlay(5, 5, 3)
 
 useStorage('vuesweeper-state', play.state)
 
@@ -134,7 +135,7 @@ watchEffect(() => {
 
 <template>
   <div>
-    Minesweeper
+    Minesweeper {{ play.state.value.gameState }}
 
     <div p5 w-auto scroll-auto overflow-auto>
       <div
@@ -167,5 +168,6 @@ watchEffect(() => {
         </button>
       </div>
     </div>
+    <ConFetti :passed="play.state.value.gameState === 'won'" />
   </div>
 </template>
